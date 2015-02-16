@@ -463,7 +463,7 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
-	for (int videoNom = 3; videoNom <= 6; videoNom++)
+	for (int videoNom = 4; videoNom <= 6; videoNom++)
 	{
 	
 	std::string name = "outFile" + intToString(videoNom) + ".txt";
@@ -539,12 +539,12 @@ int main(int argc, char *argv[])
 				break;
 			case 4:
 				x = 935;
-                		y = 600; //603
+                		y = 600; //
                 		width = 75;
-                		height = 25;//24
+                		height = 25;//
                 		pixAboveColon = 7;
                 		pixMin1 = 26;
-                		pixMin2 = 15;
+                		pixMin2 = 14; //15
                 		pixSec1 = 4;
                 		pixSec2 = 17;
                 		slotWidth = 13;
