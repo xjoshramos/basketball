@@ -86,7 +86,7 @@ int rotatedBoxFeature( Mat img, int videoNom) {
 			// regular rotation
                 	Point2f rect_points[4]; minRect[i].points( rect_points );
                 	angle = minRect[i].angle;
-                	cout << " regular angle " << angle << "  hull angle = " << angle1 << "  hull size " << hull.size() << endl;
+                	//cout << " regular angle " << angle << "  hull angle = " << angle1 << "  hull size " << hull.size() << endl;
                 	for( int j = 0; j < 4; j++ ){
                         	line( drawing, rect_points[j], rect_points[(j+1)%4], color1, 1, 8 );
 			}
@@ -99,18 +99,6 @@ int rotatedBoxFeature( Mat img, int videoNom) {
 
      	}
 
-	for(int k = 0; k < img.rows; k++){
-		if (img.at<uchar>(k,k) == 255)
-               	{
-                      distanceSlopeCheck = k;
-                      break;
-               	}
-        }	
-	cout << "chekcing slop " << distanceSlopeCheck << endl;
-	//cout << "box counter " << boxCount << endl;
-	//if (boxCount == 3 && videoNom != 5) {
-	//	featureNumber = 8;
-	//}
 	
 	if( abs(angle) > 23 && abs(angle) < 75) // 22, 75
         {
