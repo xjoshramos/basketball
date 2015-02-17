@@ -63,12 +63,6 @@ int rotatedBoxFeature( Mat img, int videoNom) {
        		// contour
        		drawContours( drawing, contours, i, color, -1, 8, vector<Vec4i>(), 0, Point() );
        
-		/*Point2f rect_points[4]; minRect[i].points( rect_points );
-		angle = minRect[i].angle;
-		cout << " angle " << angle << endl;
-       		for( int j = 0; j < 4; j++ )
-          		line( drawing, rect_points[j], rect_points[(j+1)%4], color1, 1, 8 );
-		*/
 		if(hierarchy[i][2] == -1 && hierarchy[i][3] != -1){
                         Scalar color = Scalar( 0, 0, 255 );
                         drawContours( drawing, contours, i, color, 1, 8, vector<Vec4i>(), 0, Point() );
@@ -118,12 +112,10 @@ int rotatedBoxFeature( Mat img, int videoNom) {
 	//	featureNumber = 8;
 	//}
 	
-	//if( abs(angle) > 23 && abs(angle) < 75) // 22, 75
-        //{
-		//cout << " good angle = " << angle << endl; 
-        //        featureNumber = 4;
-        //}
-	//cout << " bad angle " << angle << endl;
+	if( abs(angle) > 23 && abs(angle) < 75) // 22, 75
+        {
+                featureNumber = 4;
+        }
 	
 	if (DISPLAYDEBUG == 1){
 		imshow("rotated hull" , rotatedHull);
@@ -147,14 +139,8 @@ bool checkEmptySlot( bool white, Mat img, int videoNom)
 		copyMakeBorder(img,checkSlot,5,5,5,5,BORDER_CONSTANT,Scalar(255));
 	}
 	medianBlur(checkSlot, checkSlot, 3);
-        /*if(videoNom == 4){
-	
-        	inRange(checkSlot,150,255,checkSlot);
-	}
-	else{
 
-		inRange(checkSlot,170,255,checkSlot);
-	}*/
+
 	if( white == false){
 		inRange(checkSlot,150,255,checkSlot);
 	}else{
@@ -166,8 +152,8 @@ bool checkEmptySlot( bool white, Mat img, int videoNom)
 
 		imshow("empty check" , checkSlot);
 	}
-	//waitKey(100);
-	//threshold(checkSlot, checkSlot, 0, 255, CV_THRESH_BINARY | CV_THRESH_OTSU);
+
+
         bool checkEmpty = false;
 	int sum = 0;
 	for(int i = 0; i < checkSlot.rows; i++){
@@ -178,17 +164,11 @@ bool checkEmptySlot( bool white, Mat img, int videoNom)
 			}
 		}
 	}
-        //if(checkSlot.at<uchar>(5,5) + checkSlot.at<uchar>(6,6) + checkSlot.at<uchar>(7,7)> 0)
-        //{
-        //        checkEmpty = true;
-                //int pixel = checkSlot.at<uchar>(5,5) + checkSlot.at<uchar>(6,6);;
-        //}
+
+
 	int thresh;
-	if( videoNom == 4) {
-		thresh = 0;
-	}else{
-		thresh = 20;
-	}
+	thresh = 20;
+
 	if(sum <= thresh){
 		checkEmpty = true;
 	}
@@ -253,26 +233,21 @@ prepareImage numberRec(bool white, int x, int y, int width, int height, Mat fram
 	}
 
 	morphologyEx(slot, slot, cv::MORPH_CLOSE, element2); // OPEN
-	// turn on for observation
-	//threshold(rotation, rotation, 0, 255, CV_THRESH_BINARY_INV | CV_THRESH_OTSU);
        	morphologyEx(rotation, rotation, cv::MORPH_ERODE, element); // OPEN	
 
 	image.feature = rotatedBoxFeature(rotation, videoNom); // check feature for four // slot
 	
 	copyMakeBorder(slot, slot, width/2, width/2, height/2, height/2, BORDER_CONSTANT,Scalar(0)); // 7
-	//if(videoNom == 4){
-		resize(slot,slot,Size(20,20)); // 16 16jxr // 20 20
-	//}else{
-		resize(slot,slot,Size(width*2,height*2)); // 16 16 // 15 25
-	//}
+	
+	resize(slot,slot,Size(20,20)); // 16 16jxr // 20 20
+	resize(slot,slot,Size(width*2,height*2)); // 16 16 // 15 25
 	resize(slot,slot,Size(32,32)); //best except 4 jxr
-	//medianBlur(slot, slot, 3);	
+	
 	image.image = slot;
 	
 	if( DISPLAYDEBUG == 1){
 		imshow("regular slot", slot);
 		waitKey(1);
-		//imshow("display", image.image);
 	}
 	
 	return image;
@@ -299,13 +274,6 @@ colonCenter checkForColon( bool white, int x, int y, int width, int height, Mat 
 		imshow( " timer timer real " , fullTimerCheckGray);
 	}
 
-	//Size size(3,3);
-  	//GaussianBlur(fullTimerCheckGray,fullTimerCheckGray,size,0);
-   	//inRange(fullTimerCheckGray,100,255,timerBw);
-	//adaptiveThreshold(fullTimerCheckGray, timerBw,255,CV_ADAPTIVE_THRESH_MEAN_C, CV_THRESH_BINARY,75,10);
-  	//bitwise_not(timerBw, timerBw);
-	//imshow( "adaptive", timerBw);
-	//medianBlur(fullTimerCheckGray, fullTimerCheckGray, 3);
 	if(white == false){
 		/*Mat gray;
 		copyMakeBorder(fullTimerCheckGray,gray,10,10,10,10,BORDER_CONSTANT,Scalar(255));
@@ -395,16 +363,6 @@ colonCenter checkForColon( bool white, int x, int y, int width, int height, Mat 
 
 		//tbd checks for three dots 
 
-		/*
-		colonLocation.centerX = mcColon[0].x + x;	
-		if(mcColon[0].y <= mcColon[1].y )
-		{
-			colonLocation.centerY = mcColon[0].y + y;
-		}
-		else 
-		{
-			colonLocation.centerY = mcColon[1].y + y;
-		} */
 
 	}else{
 		// timer is off is colon is not detected
@@ -585,78 +543,6 @@ int main(int argc, char *argv[])
 
 		}
 		
-		//skip++;
-		//if( skip != 5001) continue;
-		//skip = 5000;
-		/*	
-		if(DISPLAYDEBUG == 1){
-			
-			Mat hsv;
-			Mat gray;
-			vector<Mat> channels;
-
-			Mat otsuimg;
-			Mat ranger;
-			Mat hsvOtsu;
-			Mat adapt;
-
-                        //imshow("real frame", frame);
-                        //waitKey(1);
-                        
-			Mat timer(frame, cv::Rect(985, 603, 75, 33));
-			imshow("timer" , timer);
-			
-			cvtColor( timer, hsv, CV_BGR2HSV);
-			split(hsv, channels);
-
-			cvtColor( timer, gray, CV_BGR2GRAY);
-			if (white == 1){
-				copyMakeBorder(gray,gray,10,10,10,10,BORDER_CONSTANT,Scalar(0));	
-				Size size(3,3);
-        			GaussianBlur(gray,gray,size,0);
-        			adaptiveThreshold(gray, adapt,255,CV_ADAPTIVE_THRESH_MEAN_C, CV_THRESH_BINARY_INV,13,10);
-				imshow("adaptive" , adapt);	
-
-
-				inRange(gray,0,150,ranger);
-				imshow("inrange" , ranger);
-				waitKey(1);
-				//copyMakeBorder(gray,gray,10,10,10,10,BORDER_CONSTANT,Scalar(0));
-				threshold(gray, otsuimg, 0, 255, CV_THRESH_BINARY_INV | CV_THRESH_OTSU);
-				Mat cropedImage = otsuimg(Rect(10,10,width-10,height));
-                                imshow("otsu", cropedImage);
-				waitKey(1);
-				Mat channel1 = channels[2];
-				threshold(channel1, hsvOtsu, 0, 255, CV_THRESH_BINARY_INV | CV_THRESH_OTSU);
-				imshow(" hsv otsu" , hsvOtsu);
-				waitKey(1);
-			}else{
-				copyMakeBorder(gray,gray,10,10,10,10,BORDER_CONSTANT,Scalar(255));
-				Size size(3,3);
-                                GaussianBlur(gray,gray,size,0);
-                                adaptiveThreshold(gray, adapt,255,CV_ADAPTIVE_THRESH_MEAN_C, CV_THRESH_BINARY,13,10);
-                                imshow("adaptive" , adapt);
-
-
-                                inRange(gray,0,150,ranger);
-                                imshow("inrange" , ranger);
-                                waitKey(1);
-
-                                threshold(gray, otsuimg, 0, 255, CV_THRESH_BINARY | CV_THRESH_OTSU);
-				Mat cropedImage = otsuimg(Rect(x+1,y+1,width-1,height-1));
-                                imshow("otsu", cropedImage);
-                                waitKey(1);
-                                Mat channel1 = channels[2];
-                                threshold(channel1, hsvOtsu, 0, 255, CV_THRESH_BINARY | CV_THRESH_OTSU);
-                                imshow(" hsv otsu" , hsvOtsu);
-                                waitKey(1);
-
-			}
-
-
-
-			
-                }*/
 		
 		// check for colon for timer on or off, tbd vertical check
 		colonCenter locationOfColon = checkForColon(white, x, y, width, height, frame, slotWidth, slotHeight, pixAboveColon);
@@ -666,6 +552,7 @@ int main(int argc, char *argv[])
 			out <<"frame:" << frameCount << ", gc: " <<  "NO TIMER " << "," << "\n";
 			continue;
 		}
+
 		prepareImage secSlot1 = numberRec(white, locationOfColon.centerX+pixSec1, locationOfColon.centerY - pixAboveColon, slotWidth, slotHeight, frame, videoNom);
                 prepareImage secSlot2 = numberRec(white, locationOfColon.centerX+pixSec2, locationOfColon.centerY - pixAboveColon, slotWidth, slotHeight, frame, videoNom);
                 prepareImage minSlot2 = numberRec(white, locationOfColon.centerX-pixMin2, locationOfColon.centerY - pixAboveColon, slotWidth, slotHeight, frame, videoNom);
@@ -710,7 +597,7 @@ int main(int argc, char *argv[])
 		sec2 = (int) net.fprop(imgSec2);
 		
 		// feature four detection and replacement 
-		if (minSlot1.feature > 0 && minSlot1.emptySlot != true){ // fix jxr
+		if (minSlot1.feature > 0 && minSlot1.emptySlot != true){ 
 			min1 = minSlot1.feature;
 		}
 		if (minSlot2.feature > 0 && minSlot1.emptySlot != true){
