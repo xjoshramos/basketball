@@ -601,7 +601,8 @@ int main(int argc, char *argv[])
                         min1 = 0;
                         min2 = 0;
                 }
-		//display result in red on real timer 
+		//display result in red on real timer
+		if (DISPLAYDEBUG == 1){ 
 		ostringstream val1, val2, val3, val4;
 		val1 << (int) min1;
 		val2 << (int) min2;
@@ -619,7 +620,7 @@ int main(int argc, char *argv[])
                 putText(displayTime, val4.str().c_str(), Point(30, displayTime.cols/2), FONT_HERSHEY_SIMPLEX, .5,Scalar(0, 0, 255),1);
 		
 		imshow( "Timer Recognition" , displayTime);
-		waitKey(1);
+		waitKey(1);}
 
 		//time it takes to process, print to file
 		time(&end);
