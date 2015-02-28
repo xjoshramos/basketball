@@ -11,7 +11,7 @@
 using namespace std;
 using namespace cv;
 
-struct prepareImage{
+struct prepareImage{     // split image into small boxes around digits
         bool emptySlot;
         Mat image;
 	int centerY;
@@ -20,7 +20,7 @@ struct prepareImage{
 	
 };
 
-struct colonCenter{
+struct colonCenter{    // finding colon to anchor boxes against
         bool sec;
         bool colon;
         int centerX;
@@ -29,73 +29,51 @@ struct colonCenter{
 
 
 int rotatedBoxFeature( Mat img, int videoNom) {
-        int featureNumber = 0;
+        //rotated feaute angle for the number four 
+	int featureNumber = 0;
 	int angle = 0;
 	Mat temp;
 	img.copyTo(temp);	
 	
 	Mat drawing = Mat::zeros( temp.size(), CV_8UC3 );
-	Mat hullImg = Mat::zeros( temp.size(), CV_8UC3 );
-	Mat rotatedHull = Mat::zeros( temp.size(), CV_8UC3 );
 
 	vector<vector<Point> > contours;
   	vector<Vec4i> hierarchy;
   	findContours( temp, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0, 0) );
 	
 	vector<RotatedRect> minRect( contours.size() );
-	vector<RotatedRect> minRectHull( contours.size() );
 
 	for( int i = 0; i < contours.size(); i++ )
 	{ 
 		minRect[i] = minAreaRect( Mat(contours[i]) );
      	}
 	
-	vector<vector<Point> >hull( contours.size() );
-	int distanceSlopeCheck = 0;
 	int boxCount = 0;
 	for( int i = 0; i< contours.size(); i++ )
      	{
-		convexHull( Mat(contours[i]), hull[i], false ); //find hull
-		minRectHull[i] = minAreaRect( Mat(hull[i]) );
-		boxCount++;
+		boxCount++; // number of holes 
        		Scalar color = Scalar( 0, 255,0);
 		Scalar color1 = Scalar( 255,0,0);
-       		// contour
-       		drawContours( drawing, contours, i, color, -1, 8, vector<Vec4i>(), 0, Point() );
-       
+
+		//contour
 		if(hierarchy[i][2] == -1 && hierarchy[i][3] != -1){
                         Scalar color = Scalar( 0, 0, 255 );
-                        drawContours( drawing, contours, i, color, 1, 8, vector<Vec4i>(), 0, Point() );
-                }else{
-			// hull drawing 
-			Scalar color = Scalar( 0,255,0);
-        		drawContours( hullImg, contours, i, Scalar(255,255,255), -1, 8, vector<Vec4i>(), 0, Point() );
-			drawContours( rotatedHull, contours, i, Scalar(255,255,255), -1, 8, vector<Vec4i>(), 0, Point() );
-        		drawContours( hullImg, hull, i, color, 1, 8, vector<Vec4i>(), 0, Point() );
-			drawContours( rotatedHull, hull, i, color, 1, 8, vector<Vec4i>(), 0, Point() );
-
-
-
-			int angle1 = minRectHull[i].angle;
-			//rotated hull
-			Point2f rect_pointsHull[4]; minRectHull[i].points( rect_pointsHull );
-                        for( int j = 0; j < 4; j++ ){
-                                line( rotatedHull, rect_pointsHull[j], rect_pointsHull[(j+1)%4], color1, 1, 8 );
-			}
+                        if(DISPLAYDEBUG == 1){
+				drawContours( drawing, contours, i, color, 1, 8, vector<Vec4i>(), 0, Point() );
+                	}
+		}else{
 			
-			// regular rotation
-                	Point2f rect_points[4]; minRect[i].points( rect_points );
-                	angle = minRect[i].angle;
-                	//cout << " regular angle " << angle << "  hull angle = " << angle1 << "  hull size " << hull.size() << endl;
-                	for( int j = 0; j < 4; j++ ){
-                        	line( drawing, rect_points[j], rect_points[(j+1)%4], color1, 1, 8 );
-			}
-
-
+                	angle = minRect[i].angle; // rotated angle of min rect
+			
+			/*if(DISPLAYDEBUG == 1){
+				// regular rotation
+                        	Point2f rect_points[4]; minRect[i].points( rect_points );
+                		for( int j = 0; j < 4; j++ ){
+                        		line( drawing, rect_points[j], rect_points[(j+1)%4], color1, 1, 8 );
+				}
+			{*/
 
 		}
-
-
 
      	}
 
@@ -104,10 +82,15 @@ int rotatedBoxFeature( Mat img, int videoNom) {
         {
                 featureNumber = 4;
         }
-	
+
+	/*
+	if( boxCount == 3) // 22, 75
+        {
+                featureNumber = 8;
+        }
+	*/
+
 	if (DISPLAYDEBUG == 1){
-		imshow("rotated hull" , rotatedHull);
-		imshow("hull img" , hullImg);
 		imshow(" rotated angle " , drawing); 
 		waitKey(1);
 	}
@@ -178,60 +161,37 @@ prepareImage numberRec(bool white, int x, int y, int width, int height, Mat fram
 	
 	cvtColor( slot, slot, CV_BGR2GRAY);
 	
+	//check if slot and empty
 	image.emptySlot = checkEmptySlot(white, slot, videoNom);
-	//cout << "empty = " << image.emptySlot << endl;	
 	
+	// upsample slot image
 	Mat rotation;
 	resize(slot,slot,Size(width*2,height*2));//36 36
 	resize(slot,rotation,Size(width*(2),height*(2)));
-	//resize(slot,rotation,Size(35,40));
 	
-
-	//medianBlur(slot, slot, 3);
+	// thresholding can improve by bordering image with white
 	if(white == false){
-		/*
-		Mat gray;
-                copyMakeBorder(slot,gray,10,10,10,10,BORDER_CONSTANT,Scalar(255));
-                threshold(gray, gray, 0, 255, CV_THRESH_BINARY | CV_THRESH_OTSU);
-                Mat cropedImage = gray(Rect(10,10,width,height));
-                slot = cropedImage;
-		rotation = slot;
-		*/
-
+		//threshold for black background
 		threshold(slot, slot, 0, 255, CV_THRESH_BINARY | CV_THRESH_OTSU);
 		threshold(rotation, rotation, 0, 255, CV_THRESH_BINARY | CV_THRESH_OTSU);
-		//inRange(rotation,150,255,rotation);
 	}else{
-		/*
-		Mat gray1;
-                copyMakeBorder(slot,gray1,5,5,5,5,BORDER_CONSTANT,Scalar(0));
-                threshold(gray1, gray1, 0, 255, CV_THRESH_BINARY_INV | CV_THRESH_OTSU);
-		imshow("grayyyyyy" , gray1);
-                //Mat cropedImage1 = gray1(Rect(5,5,width,height));
-		//imshow("cropppeddsfasd" , cropedImage1);
-                slot = gray1;
-		Mat cropedImage1 = slot(Rect(5,5,width,height));
-		imshow("fksdjflkasjdklfja;l" , cropedImage1);
-                rotation = slot;
-
-		*/
-		//inRange(rotation,150,255,rotation);
+		//threshold for white backgroung
 		threshold(rotation, rotation, 0, 255, CV_THRESH_BINARY_INV | CV_THRESH_OTSU);
 		threshold(slot, slot, 0, 255, CV_THRESH_BINARY_INV | CV_THRESH_OTSU);	
 	}
 
-	morphologyEx(slot, slot, cv::MORPH_CLOSE, element2); // OPEN
-       	morphologyEx(rotation, rotation, cv::MORPH_ERODE, element); // OPEN	
+	morphologyEx(slot, slot, cv::MORPH_CLOSE, element2);  // for digit recognition
+       	morphologyEx(rotation, rotation, cv::MORPH_ERODE, element); // for rotated angling 	
 
-	image.feature = rotatedBoxFeature(rotation, videoNom); // check feature for four // slot
+	image.feature = rotatedBoxFeature(rotation, videoNom); // check feature for four 
 	
-	copyMakeBorder(slot, slot, width/2, width/2, height/2, height/2, BORDER_CONSTANT,Scalar(0)); // 7
+	copyMakeBorder(slot, slot, width/2, width/2, height/2, height/2, BORDER_CONSTANT,Scalar(0)); // border and maintaing aspect ratio
 	
-	resize(slot,slot,Size(20,20)); // 16 16jxr // 20 20
-	resize(slot,slot,Size(width*2,height*2)); // 16 16 // 15 25
-	resize(slot,slot,Size(32,32)); //best except 4 jxr
+	resize(slot,slot,Size(20,20)); // 16 16
+	resize(slot,slot,Size(width*2,height*2)); 
+	resize(slot,slot,Size(32,32)); //32 32 for the nueral net requirement
 	
-	image.image = slot;
+	image.image = slot; // return slot image after pre processing
 	
 	if( DISPLAYDEBUG == 1){
 		imshow("regular slot", slot);
@@ -244,6 +204,7 @@ prepareImage numberRec(bool white, int x, int y, int width, int height, Mat fram
 
 colonCenter checkForColon( bool white, int x, int y, int width, int height, Mat frame, int slotWidth, int slotHeight, int pixAboveColon)
 {	
+	//detection colon anchor
 	colonCenter colonLocation;
 	
 	Mat fullTimerCheckGray, timerBw;
@@ -261,8 +222,9 @@ colonCenter checkForColon( bool white, int x, int y, int width, int height, Mat 
 	if( DISPLAYDEBUG == 1){
 		imshow( " timer timer real " , fullTimerCheckGray);
 	}
-
+	 
 	if(white == false){
+		//white bordering may work better
 		/*Mat gray;
 		copyMakeBorder(fullTimerCheckGray,gray,10,10,10,10,BORDER_CONSTANT,Scalar(255));
 		threshold(gray, gray, 0, 255, CV_THRESH_BINARY | CV_THRESH_OTSU);
@@ -409,7 +371,7 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
-	for (int videoNom = 4; videoNom <= 6; videoNom++)
+	for (int videoNom = 3; videoNom <= 6; videoNom++)
 	{
 	
 	std::string name = "outFile" + intToString(videoNom) + ".txt";
@@ -444,9 +406,6 @@ int main(int argc, char *argv[])
 	for( ; ;){
 		
 		capture >> frame;
-		//skip++;
-		//if( skip != 7001) continue;
-		//skip = 7000;
 		if (frame.empty()) {
 			cout << " FRAME empyter" << endl;
 			break;
@@ -603,24 +562,25 @@ int main(int argc, char *argv[])
                 }
 		//display result in red on real timer
 		if (DISPLAYDEBUG == 1){ 
-		ostringstream val1, val2, val3, val4;
-		val1 << (int) min1;
-		val2 << (int) min2;
-		val3 << (int) sec1;
-		val4 << (int) sec2;
+			ostringstream val1, val2, val3, val4;
+			val1 << (int) min1;
+			val2 << (int) min2;
+			val3 << (int) sec1;
+			val4 << (int) sec2;
 		
-		Mat display(frame, cv::Rect(x, locationOfColon.centerY - pixAboveColon, width, height));
-		Mat displayTime( display.size(), CV_8U, Scalar(0));
-        	display.copyTo(displayTime);
-		copyMakeBorder(displayTime,displayTime,50,50,50,50,BORDER_CONSTANT,Scalar(0));		
+			Mat display(frame, cv::Rect(x, locationOfColon.centerY - pixAboveColon, width, height));
+			Mat displayTime( display.size(), CV_8U, Scalar(0));
+        		display.copyTo(displayTime);
+			copyMakeBorder(displayTime,displayTime,50,50,50,50,BORDER_CONSTANT,Scalar(0));		
 	
-		putText(displayTime, val1.str().c_str(), Point(0, displayTime.cols/2), FONT_HERSHEY_SIMPLEX, .5,Scalar(0, 0, 255),1);
-                putText(displayTime, val2.str().c_str(), Point(10, displayTime.cols/2), FONT_HERSHEY_SIMPLEX, .5,Scalar(0, 0, 255),1);
-                putText(displayTime, val3.str().c_str(), Point(20, displayTime.cols/2), FONT_HERSHEY_SIMPLEX, .5,Scalar(0, 0, 255),1);
-                putText(displayTime, val4.str().c_str(), Point(30, displayTime.cols/2), FONT_HERSHEY_SIMPLEX, .5,Scalar(0, 0, 255),1);
+			putText(displayTime, val1.str().c_str(), Point(0, displayTime.cols/2), FONT_HERSHEY_SIMPLEX, .5,Scalar(0, 0, 255),1);
+                	putText(displayTime, val2.str().c_str(), Point(10, displayTime.cols/2), FONT_HERSHEY_SIMPLEX, .5,Scalar(0, 0, 255),1);
+                	putText(displayTime, val3.str().c_str(), Point(20, displayTime.cols/2), FONT_HERSHEY_SIMPLEX, .5,Scalar(0, 0, 255),1);
+                	putText(displayTime, val4.str().c_str(), Point(30, displayTime.cols/2), FONT_HERSHEY_SIMPLEX, .5,Scalar(0, 0, 255),1);
 		
-		imshow( "Timer Recognition" , displayTime);
-		waitKey(1);}
+			imshow( "Timer Recognition" , displayTime);
+			waitKey(1);
+		}
 
 		//time it takes to process, print to file
 		time(&end);
